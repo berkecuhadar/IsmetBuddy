@@ -17,6 +17,7 @@
   "author": "Berke Cuhadar",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^42.2.0"
+    "electron": "^42.2.0",
+    "electron-packager": "^17.1.2"
   }
 }

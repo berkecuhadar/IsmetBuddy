@@ -31,7 +31,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: WINDOW_SIZE,
     height: WINDOW_SIZE,
-    icon: path.join(__dirname, 'ismet.ico'), 
+    icon: path.join(__dirname, 'src/ismet.ico'), 
     transparent: true,
     frame: false,
     resizable: false,
