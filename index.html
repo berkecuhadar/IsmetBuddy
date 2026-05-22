@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
+        #buddy {
+            width: 150px; height: 150px;
+            image-rendering: pixelated; 
+            cursor: grab;
+            user-select: none;
+            -webkit-user-drag: none;
+            transition: transform 0.1s ease;
+        }
+        #buddy:active { cursor: grabbing; }
+        .flip-left { transform: scaleX(-1) !important; }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+    <img id="buddy" src="src/sheet/ismet/idle/tile000.png" draggable="false">
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        const buddy = document.getElementById('buddy');
+        
+        let state = 'idle';
+        let currentFrame = 0;
+        let animationInterval = null;
+        let walkDirection = 1; 
+        let mouseIdleTimer = null;
+        let isDragging = false;
+        let offset = { x: 0, y: 0 };
+        
+        let lastMouseMoveTime = Date.now();
+        let lastMouseX = 0, lastMouseY = 0;
+        const MOUSE_SENSITIVITY = 10; 
+        const IDLE_WAIT_TIME = 2000; 
+
+        // --- AUDIO CONFIGURATION ---
+        const sounds = {
+            idle: { file: 'src/audio/idle.mp3', loop: false },
+            walk: { file: 'src/audio/walk.mp3', loop: true },
+            jump: { file: 'src/audio/jump.mp3', loop: false },
+            turn: { file: 'src/audio/turn.mp3', loop: false },
+            pet:  { file: 'src/audio/pet.mp3', loop: true },
+            look: { file: 'src/audio/look.mp3', loop: false }
+        };
+        let currentAudio = null;
+
+        function playSound(action) {
+            if (!sounds[action]) { stopSound(); return; }
+            if (currentAudio && currentAudio.src.includes(sounds[action].file) && sounds[action].loop) return;
+
+            stopSound();
+            currentAudio = new Audio(sounds[action].file);
+            currentAudio.loop = sounds[action].loop;
+            currentAudio.play().catch(e => console.log("Audio Error:", e));
+        }
+
+        function stopSound() {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                currentAudio = null;
+            }
+        }
+
+        // --- ANIMATION CONFIGURATION ---
+        const animations = {
+            idle: { folder: 'src/sheet/ismet/idle', frames: 12, speed: 120 },
+            walk: { folder: 'src/sheet/ismet/walk', frames: 12, speed: 120 },
+            jump: { folder: 'src/sheet/ismet/jump', frames: 12, speed: 120 },
+            turn: { folder: 'src/sheet/ismet/turn', frames: 12, speed: 120 },
+            pet:  { folder: 'src/sheet/ismet/pet',  frames: 12, speed: 120 }
+        };
+
+        function playAnimation(action) {
+            if (state === action && animationInterval && action === 'idle') return;
+            
+            playSound(action);
+
+            clearInterval(animationInterval);
+            state = action;
+            currentFrame = 0;
+            const config = animations[action];
+            
+            animationInterval = setInterval(() => {
+                const frameName = `tile${String(currentFrame).padStart(3, '0')}`;
+                buddy.src = `${config.folder}/${frameName}.png`;
+                
+                if (state === 'walk' && !isDragging) {
+                    ipcRenderer.send('move-window', { x: walkDirection * 5, y: 0 });
+                }
+                if (state === 'jump' && !isDragging) {
+                    let yVal = currentFrame < 6 ? -12 : 12;
+                    ipcRenderer.send('move-window', { x: 0, y: yVal });
+                }
+
+                currentFrame++;
+                if (currentFrame >= config.frames) {
+                    if (['jump', 'turn'].includes(action)) {
+                        clearInterval(animationInterval);
+                        state = 'idle';
+                        playAnimation('idle');
+                    } else {
+                        currentFrame = 0;
+                    }
+                }
+            }, config.speed);
+        }
+
+        // --- GLOBAL MOUSE TRACKING RADAR ---
+        ipcRenderer.on('global-mouse-move', (event, mousePos) => {
+            const dist = Math.sqrt(Math.pow(mousePos.x - lastMouseX, 2) + Math.pow(mousePos.y - lastMouseY, 2));
+            if (dist < MOUSE_SENSITIVITY) return;
+
+            lastMouseMoveTime = Date.now();
+            lastMouseX = mousePos.x; lastMouseY = mousePos.y;
+
+            if (isDragging || state === 'walk' || state === 'jump' || state === 'pet') return;
+
+            const buddyRect = buddy.getBoundingClientRect();
+            const buddyCenterX = window.screenX + buddyRect.left + (buddyRect.width / 2);
+            const buddyCenterY = window.screenY + buddyRect.top + (buddyRect.height / 2);
+
+            if (mousePos.x < buddyCenterX) buddy.classList.add('flip-left');
+            else buddy.classList.remove('flip-left');
+
+            let yDir = mousePos.y <= buddyCenterY ? "+y" : "-y";
+            const lookFile = `+x${yDir}.png`;
+            const newSrc = `src/sheet/ismet/look/${lookFile}`;
+            
+            if (buddy.src.indexOf(lookFile) === -1) {
+                clearInterval(animationInterval);
+                state = 'look';
+                buddy.src = newSrc;
+                playSound('look');
+            }
+
+            clearTimeout(mouseIdleTimer);
+            mouseIdleTimer = setTimeout(() => {
+                if (state === 'look') {
+                    state = 'idle';
+                    playAnimation('idle');
+                }
+            }, 1500);
+        });
+
+        // --- DRAG AND DROP HANDLING ---
+        buddy.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            offset = { x: e.screenX - window.screenX, y: e.screenY - window.screenY };
+            playAnimation('idle');
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                ipcRenderer.send('update-position', { x: e.screenX - offset.x, y: e.screenY - offset.y });
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                playAnimation('jump');
+            }
+        });
+
+        // --- BEHAVIOR LIFE CYCLE ---
+        function startWalking() {
+            if (isDragging) return;
+            walkDirection = Math.random() > 0.5 ? 1 : -1;
+            if (walkDirection === -1) buddy.classList.add('flip-left');
+            else buddy.classList.remove('flip-left');
+            playAnimation('walk');
+            setTimeout(() => { if (state === 'walk') playAnimation('idle'); }, 3000);
+        }
+
+        setInterval(() => {
+            const timeSinceLastMove = Date.now() - lastMouseMoveTime;
+            if (state !== 'idle' || isDragging || timeSinceLastMove < IDLE_WAIT_TIME) return;
+
+            const r = Math.random();
+            if (r < 0.50) startWalking();
+            else if (r < 0.60) playAnimation('jump');
+            else if (r < 0.68) playAnimation('turn');
+        }, 3000);
+
+        buddy.addEventListener('mouseenter', () => {
+            ipcRenderer.send('set-ignore-mouse', false);
+            if (!isDragging) playAnimation('pet');
+        });
+        buddy.addEventListener('mouseleave', () => {
+            ipcRenderer.send('set-ignore-mouse', false);
+            if (!isDragging) playAnimation('idle');
+        });
+
+        playAnimation('idle');
+    </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "ismetbuddy",
+  "version": "1.0.0",
+  "description": "An interactive pixel-art desktop pet companion built with Electron.js",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "github.com/berkecuhadar/IsmetBuddy.git"
+  },
+  "keywords": [
+    "desktop",
+    "mate"
+  ],
+  "author": "Berke Cuhadar",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^42.2.0"
+  }
+}
