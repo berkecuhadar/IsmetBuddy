@@ -113,6 +113,45 @@ Ctrl + C
 
 ---
 
+
+## 📦 Build for Windows
+
+You can package **IsmetBuddy** into a standalone Windows executable using `electron-packager`.
+
+### Build Command
+
+Run the following command from the project root directory:
+
+```bash
+npx electron-packager . IsmetBuddy --platform=win32 --arch=x64 --out=dist/ --icon=src/icon.ico
+```
+
+### Output
+
+After the build process completes, the packaged application will be generated inside:
+
+```text
+dist/
+```
+
+Example output structure:
+
+```text
+dist/
+└── IsmetBuddy-win32-x64/
+    ├── IsmetBuddy.exe
+    └── ...
+```
+
+You can launch the desktop pet directly via:
+
+```text
+IsmetBuddy.exe
+```
+
+---
+
+
 ## 📄 License
 
 This project is licensed under the **MIT License**.
