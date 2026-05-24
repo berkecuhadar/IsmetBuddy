@@ -1,4 +1,4 @@
-# IsmetBuddy 🐾
+# IsmetBuddy 
 
 **IsmetBuddy** is an interactive pixel-art desktop pet companion built with **Electron.js**.
 
@@ -6,7 +6,7 @@ The pet lives directly on your desktop, featuring animated behaviors, sound effe
 
 ---
 
-## 🚀 Features
+## Features
 
 ### Dynamic Animation System
 - State-driven behavior system
@@ -40,7 +40,7 @@ The pet lives directly on your desktop, featuring animated behaviors, sound effe
 
 ---
 
-## 📋 Prerequisites
+## Prerequisites
 
 Before running the project, ensure you have:
 
@@ -56,7 +56,7 @@ npm -v
 
 ---
 
-## ⚙️ Installation
+## Installation
 
 ### 1. Clone the Repository
 
@@ -73,7 +73,7 @@ npm install
 
 ---
 
-## ▶️ Running the Application
+## Running the Application
 
 Start IsmetBuddy:
 
@@ -85,7 +85,7 @@ Once launched, the desktop pet will appear on your screen.
 
 ---
 
-## 🎮 Interaction Guide
+## Interaction Guide
 
 ### Automatic Movement
 IsmetBuddy moves across the lower section of your desktop workspace automatically.
@@ -114,7 +114,7 @@ Ctrl + C
 ---
 
 
-## 📦 Build for Windows
+## Build for Windows
 
 You can package **IsmetBuddy** into a standalone Windows executable using `electron-packager`.
 
@@ -152,7 +152,7 @@ IsmetBuddy.exe
 ---
 
 
-## 📄 License
+## License
 
 This project is licensed under the **MIT License**.
 
